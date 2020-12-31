@@ -1,0 +1,76 @@
+substitutions:
+  _GCS_CACHE_BUCKET: mateco-map-data
+  _APP_NAME: ad-ecomm-navision
+
+steps:
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'dependency tracker decryption credentials'
+    args:
+      - kms
+      - decrypt
+      - --location=global
+      - --keyring=cloud-build
+      - --key=dependency-tracker
+      - --plaintext-file=./dependency-track.properties
+      - --ciphertext-file=./dependency-track.properties.enc
+  # Load the cached files from GCS if they exist.
+  - id: PULL_DOWN_CACHE
+    waitFor: ['-']
+    name: gcr.io/cloud-builders/gsutil
+    dir: /root
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        (
+          gsutil cp gs://${_GCS_CACHE_BUCKET}/${_APP_NAME}-m2-cache.tar.gz /tmp/m2-cache.tar.gz &&
+          tar -xzf /tmp/m2-cache.tar.gz
+        ) || echo 'Cache not found'
+    volumes:
+      - name: user.home
+        path: /root
+
+
+  - name: 'google/cloud-sdk'
+    id: COPY_MAVEN_SETTINGS
+    waitFor: ['-']
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        mkdir -p .m2 &&
+        gsutil cp gs://$PROJECT_ID-data/settings.xml.enc /root/.m2/settings.xml.enc
+    volumes:
+      - name: user.home
+        path: /root
+  - name: gcr.io/cloud-builders/gcloud
+    id: DECRYPT_MAVEN_SETTINGS
+    waitFor:
+      - COPY_MAVEN_SETTINGS
+    args:
+      - kms
+      - decrypt
+      - --ciphertext-file=/root/.m2/settings.xml.enc
+      - --plaintext-file=/root/.m2/settings.xml
+      - --location=global
+      - --keyring=cloud-build
+      - --key=maven-settings
+    volumes:
+      - name: user.home
+        path: /root
+  - name: 'maven:3.6.3-jdk-11'
+    waitFor:
+      - DECRYPT_MAVEN_SETTINGS
+    id: 'Publish dependencies to remote tracker'
+    args: ['mvn',
+           '-Pdependency-tracker',
+           'clean',
+           'install',
+           '-Ddependency-track.projectVersion=LATEST',
+           '-DskipTests',
+           'org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom',
+           'dependency-track:upload-bom']
+    volumes:
+      - name: user.home
+        path: /root
+

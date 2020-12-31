@@ -1,0 +1,11 @@
+micronaut:
+  application:
+    name: kafmin
+  server:
+    cors:
+      enabled: true
+      single-header: true
+    configurations:
+      web:
+        allowedOrigins:
+          - http://localhost:8080

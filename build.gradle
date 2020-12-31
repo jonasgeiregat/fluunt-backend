@@ -1,0 +1,78 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.4.10"
+    id "org.jetbrains.kotlin.kapt" version "1.4.10"
+    id "org.jetbrains.kotlin.plugin.allopen" version "1.4.10"
+    id "com.github.johnrengelman.shadow" version "6.1.0"
+    id "io.micronaut.application" version '1.0.5'
+}
+
+version "0.1"
+group "kafmin"
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+micronaut {
+    runtime "netty"
+    testRuntime "kotest"
+    processing {
+        incremental true
+        annotations "kafmin.*"
+    }
+}
+
+dependencies {
+    implementation("io.micronaut:micronaut-validation")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}")
+    implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
+    implementation("io.micronaut:micronaut-runtime")
+    implementation("javax.annotation:javax.annotation-api")
+    implementation("io.micronaut:micronaut-http-client")
+    implementation("io.micronaut:micronaut-http-server-netty")
+    implementation("org.apache.kafka:kafka-clients:2.3.1")
+    implementation("org.apache.commons:commons-pool2:2.9.0")
+    runtimeOnly("ch.qos.logback:logback-classic")
+    runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
+
+    // testing
+    testImplementation(platform("org.testcontainers:testcontainers-bom:1.15.0"))
+    testImplementation 'org.testcontainers:kafka'
+    testCompile "org.testcontainers:testcontainers"
+    testCompile "org.testcontainers:junit-jupiter"
+    testAnnotationProcessor "io.micronaut:micronaut-inject-java"
+    testImplementation("org.junit.jupiter:junit-jupiter-api")
+    testImplementation 'io.micronaut.test:micronaut-test-core:2.2.1'
+    testImplementation("io.micronaut.test:micronaut-test-junit5:2.2.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
+    testImplementation 'org.apache.kafka:kafka-clients:2.6.0:test'
+    testImplementation 'org.apache.kafka:kafka_2.12:2.6.0'
+    testImplementation 'org.apache.kafka:kafka_2.12:2.6.0:test'
+    testImplementation 'org.awaitility:awaitility-kotlin:4.0.3'
+    testCompile 'io.rest-assured:rest-assured:4.3.2'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+mainClassName = "kafmin.ApplicationKt"
+java {
+    sourceCompatibility = JavaVersion.toVersion('11')
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+}
+
+
+
