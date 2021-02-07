@@ -9,12 +9,13 @@ class PublishMessageUseCase(
     private val kafkaClient: KafkaClient
 ) {
     fun publish(details: MessageDetails) {
-        kafkaClient.publish(details.topic, OutboundMessage(details.key, details.value))
+        kafkaClient.publish(details.topic, OutboundMessage(details.key, details.value, details.partition))
     }
 }
 
 data class MessageDetails(
     val topic: String,
     val key: String,
-    val value: String
+    val value: String,
+    val partition: Int?
 )

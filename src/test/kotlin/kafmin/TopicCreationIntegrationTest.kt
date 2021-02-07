@@ -7,7 +7,7 @@ import org.hamcrest.Matchers.notNullValue
 import org.junit.jupiter.api.Test
 
 
-class TopicCreationScenariosTest : BaseTest() {
+class TopicCreationIntegrationTest : BaseTest() {
 
     @Test
     fun shouldCreateNewTopicWithNameOnly() {
@@ -65,18 +65,6 @@ class TopicCreationScenariosTest : BaseTest() {
                         .statusCode(200)
                         .contentType(ContentType.JSON)
                         .body("find { it.name == 'new.topic.3' }.partitions.size()", `is`(3))
-        //@formatter:on
-    }
-
-    @Test
-    fun test() {
-        //@formatter:off
-        request.get("/topics/test/messages")
-            .then()
-            .assertThat()
-            .statusCode(200)
-            .contentType(ContentType.JSON)
-            .body("find { it.name == 'new.topic.1' }", notNullValue())
         //@formatter:on
     }
 

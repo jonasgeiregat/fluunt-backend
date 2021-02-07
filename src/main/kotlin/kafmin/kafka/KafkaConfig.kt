@@ -21,14 +21,14 @@ class KafkaConsumerPoolFactory(private val port: Int) :
         BasePooledObjectFactory<KafkaConsumer<ByteArray, ByteArray>>() {
 
     override fun wrap(obj: KafkaConsumer<ByteArray, ByteArray>?): PooledObject<KafkaConsumer<ByteArray, ByteArray>> {
-        return DefaultPooledObject<KafkaConsumer<ByteArray, ByteArray>>(obj);
+        return DefaultPooledObject(obj);
     }
 
     override fun create(): KafkaConsumer<ByteArray, ByteArray> {
         val properties = Properties();
         properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, FormatRecognizingDeserializer::class.java);
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer::class.java);
-        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer::class.java);
         properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 100);
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, "kafdrop-consumer");
@@ -46,7 +46,7 @@ internal class Factory {
 
     @Singleton
     fun kafkaConsumerPool(): GenericObjectPool<KafkaConsumer<ByteArray, ByteArray>> {
-        return GenericObjectPool<KafkaConsumer<ByteArray, ByteArray>>(KafkaConsumerPoolFactory(port))
+        return GenericObjectPool(KafkaConsumerPoolFactory(port))
     }
 
     @Singleton

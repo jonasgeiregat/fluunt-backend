@@ -4,7 +4,7 @@ import io.micronaut.core.convert.ConversionService
 import io.micronaut.core.convert.TypeConverterRegistrar
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.*
-import kafmin.kafka.InboundMessage
+import kafmin.kafka.RetainedMessage
 import javax.inject.Singleton
 
 @Controller("/topics/{name}")
@@ -16,14 +16,15 @@ class MessageController(
     @Get("/messages")
     fun getMessages(
         @PathVariable("name") topic: String,
-        @QueryValue partitions: Partitions,
-        @QueryValue("message-count", defaultValue = "100") messageCount: Int
-    ): MutableList<InboundMessage> {
+        @QueryValue("size", defaultValue = "100") size: Int,
+        @QueryValue("page", defaultValue = "1") pageNumber: Int,
+        @QueryValue("partitions", defaultValue = "") partitions: Int?
+    ): MutableList<RetainedMessage> {
         return viewMessagesUseCase.viewMessages(
-            ViewMessagesByPartitionsDetails(
+            ViewMessagesDetails(
                 topic,
-                partitions.numbers,
-                messageCount
+                partitions,
+                Page(pageNumber, size)
             )
         )
             .toCollection(mutableListOf())
@@ -33,22 +34,32 @@ class MessageController(
     fun publishMessage(
         @PathVariable("name") topic: String,
         @Body message: OutboundMessageResource
-    ) : HttpResponse<Any> {
-        publishMessageUseCase.publish(MessageDetails(topic, message.key, message.body))
+    ): HttpResponse<Any> {
+        publishMessageUseCase.publish(MessageDetails(topic, message.key, message.body, message.partition))
         return HttpResponse.accepted()
     }
 }
 
-data class OutboundMessageResource(val key: String, val body: String)
+data class OutboundMessageResource(
+    val key: String,
+    val body: String,
+    val partition: Int? = null,
+    val messageType: MessageType = MessageType.STRING
+)
+
+enum class MessageType {
+    STRING, JSON, AVRO
+}
 
 data class Partitions(private val partitionsValue: String) {
 
     val numbers: List<Int>
 
     init {
-        this.numbers = partitionsValue.split(",")
-            .map { Integer.valueOf(it) }
-            .toCollection(mutableListOf())
+            this.numbers = partitionsValue.split(",")
+                .filter { it.isNotBlank() }
+                .map { Integer.valueOf(it) }
+                .toCollection(mutableListOf())
     }
 }
 
